@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { DueDate } from "./DueDate";
+import { DatePicker } from "./DatePicker";
 
 interface EditableInputProps {
 	initialValue: string;
@@ -23,11 +23,13 @@ export const EditableInput = ({ initialValue, onSave, onCancel, isOpen }: Editab
 		}
 	}, [isOpen]);
 
+	const handlePriorityChange = () => { };
+
 	return (
 		<div className="relative">
 			<div
 				className={cn(
-					"absolute left-0 top-0 w-full bg-background rounded-lg shadow-lg border",
+					"absolute left-0 top-0 w-full bg-background rounded-lg shadow-lg border z-[100]",
 					!isOpen && "hidden",
 				)}
 			>
@@ -42,9 +44,9 @@ export const EditableInput = ({ initialValue, onSave, onCancel, isOpen }: Editab
 					<Input placeholder="Description" className="text-sm" />
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-1">
-							<DueDate />
+							<DatePicker />
 							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<Flag className="h-4 w-4" />
+								<Flag className="h-4 w-4" onClick={handlePriorityChange} />
 							</Button>
 						</div>
 					</div>
@@ -55,7 +57,7 @@ export const EditableInput = ({ initialValue, onSave, onCancel, isOpen }: Editab
 							<SelectTrigger>
 								<SelectValue placeholder="Select a project" />
 							</SelectTrigger>
-							<SelectContent>
+							<SelectContent className="z-[300]">
 								<SelectItem value="1">Project 1</SelectItem>
 								<SelectItem value="2">Project 2</SelectItem>
 							</SelectContent>

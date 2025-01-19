@@ -60,20 +60,19 @@ export function DatePicker({
 		<Popover>
 			<PopoverTrigger asChild>
 				<Button
-					variant={"outline"}
+					variant={"ghost"}
 					className={cn("justify-start text-left font-normal", !date && "text-muted-foreground")}
 				>
-					<CalendarIcon className="mr-2 h-4 w-4" />
-					{/* {date ? format(date, "PPP") : <span>Pick a date</span>} */}
+					<CalendarIcon className="h-4 w-4" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-auto p-0">
+			<PopoverContent className="w-auto p-0 z-[200]">
 				<div className="flex justify-between p-2">
 					<Select onValueChange={handleMonthChange} value={months[getMonth(date)]}>
 						<SelectTrigger className="w-[110px]">
 							<SelectValue placeholder="Month" />
 						</SelectTrigger>
-						<SelectContent>
+						<SelectContent className="z-[300]">
 							{months.map((month) => (
 								<SelectItem key={month} value={month}>
 									{month}
@@ -85,7 +84,7 @@ export function DatePicker({
 						<SelectTrigger className="w-[110px]">
 							<SelectValue placeholder="Year" />
 						</SelectTrigger>
-						<SelectContent>
+						<SelectContent className="z-[300]">
 							{years.map((year) => (
 								<SelectItem key={year} value={year.toString()}>
 									{year}

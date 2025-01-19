@@ -1,4 +1,4 @@
-import { DueDate } from "@/components/custom/DueDate";
+import { DatePicker } from "@/components/custom/DatePicker";
 import { EditableInput } from "@/components/custom/EditableInput";
 import { Hint } from "@/components/custom/Hint";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+// Types
 interface Todo {
 	id: string;
 	title: string;
@@ -33,11 +34,154 @@ interface Todo {
 	priority: "p1" | "p2" | "p3" | "p4" | "none";
 }
 
-export const Route = createLazyFileRoute("/inbox")({
-	component: InboxPage,
-});
+// Priority color mapping
+const PRIORITY_COLORS: Record<Todo["priority"], string> = {
+	p1: "text-red-500",
+	p2: "text-orange-500",
+	p3: "text-amber-400",
+	p4: "text-blue-600",
+	none: "text-success",
+};
 
+// Helper function to move array items
+function arrayMove<T>(array: T[], from: number, to: number): T[] {
+	const newArray = array.slice();
+	const [removed] = newArray.splice(from, 1);
+	if (removed !== undefined) {
+		newArray.splice(to, 0, removed);
+	}
+	return newArray;
+}
+
+// TodoItem Component
+interface TodoItemProps {
+	todo: Todo;
+	isEditing: boolean;
+	onToggle: () => void;
+	onUpdate: (id: string, updates: Partial<Todo>) => void;
+	onStartEditing: () => void;
+	onCancelEditing: () => void;
+}
+
+function TodoItem({
+	todo,
+	isEditing,
+	onToggle,
+	onUpdate,
+	onStartEditing,
+	onCancelEditing,
+}: TodoItemProps) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+		id: todo.id,
+	});
+
+	const style = {
+		transform: CSS.Transform.toString(transform),
+		transition,
+	};
+
+	// Render EditableInput when in edit mode
+	if (isEditing) {
+		return (
+			<div ref={setNodeRef} style={style}>
+				<EditableInput
+					initialValue={todo.title}
+					isOpen={true}
+					onSave={(newValue) => {
+						onUpdate(todo.id, { title: newValue });
+						onCancelEditing();
+					}}
+					onCancel={onCancelEditing}
+				/>
+			</div>
+		);
+	}
+
+	// Regular todo item view
+	return (
+		<div ref={setNodeRef} style={style}>
+			<div
+				className={cn(
+					"group flex w-full items-center gap-3 py-1 bg-card transition-colors pb-2",
+					todo.completed && "opacity-60",
+					isDragging && "shadow-lg bg-background",
+				)}
+			>
+				{/* Drag Handle */}
+				<div
+					{...attributes}
+					{...listeners}
+					className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing px-2"
+				>
+					<GripVertical className="h-4 w-4 text-muted-foreground" />
+				</div>
+
+				{/* Checkbox */}
+				<div className="flex items-center gap-2">
+					<button
+						onClick={(e) => {
+							e.stopPropagation();
+							onToggle();
+						}}
+						className="flex h-5 w-5 items-center justify-center rounded-full border"
+					>
+						{todo.completed ? (
+							<CheckCircle className={cn("h-4 w-4", PRIORITY_COLORS[todo.priority])} />
+						) : (
+							<Circle className={cn("h-4 w-4", PRIORITY_COLORS[todo.priority])} />
+						)}
+					</button>
+				</div>
+
+				{/* Todo Content */}
+				<div className="flex flex-1 flex-col gap-1">
+					<span className={cn("text-sm", todo.completed && "line-through")}>{todo.title}</span>
+					<span className="text-xs text-muted-foreground flex items-center gap-1">
+						<Calendar className="h-4 w-4" />
+						{todo.date}
+					</span>
+				</div>
+
+				{/* Actions */}
+				<div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+					<Hint label="Edit">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
+							onClick={onStartEditing}
+						>
+							<Pen className="h-4 w-4" />
+						</Button>
+					</Hint>
+					<DatePicker />
+					<Hint label="Comment">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
+						>
+							<MessageSquare className="h-4 w-4" />
+						</Button>
+					</Hint>
+					<Hint label="More actions">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
+						>
+							<MoreVertical className="h-4 w-4" />
+						</Button>
+					</Hint>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// Main Page Component
 function InboxPage() {
+	// Initial todos state
 	const [todos, setTodos] = useState<Todo[]>([
 		{
 			id: "1",
@@ -76,6 +220,13 @@ function InboxPage() {
 		},
 	]);
 
+	// Editing state
+	const [editingId, setEditingId] = useState<string | null>(null);
+
+	// DnD sensors
+	const sensors = useSensors(useSensor(PointerSensor));
+
+	// Handlers
 	const handleDragEnd = (event: DragEndEvent) => {
 		const { active, over } = event;
 		if (!over || active.id === over.id) return;
@@ -93,7 +244,9 @@ function InboxPage() {
 		);
 	};
 
-	const sensors = useSensors(useSensor(PointerSensor));
+	const updateTodo = (id: string, updates: Partial<Todo>) => {
+		setTodos((prev) => prev.map((todo) => (todo.id === id ? { ...todo, ...updates } : todo)));
+	};
 
 	return (
 		<div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -108,10 +261,11 @@ function InboxPage() {
 							<TodoItem
 								key={todo.id}
 								todo={todo}
+								isEditing={editingId === todo.id}
 								onToggle={() => toggleTodo(todo.id)}
-								onUpdate={(id, updates) => {
-									setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
-								}}
+								onUpdate={updateTodo}
+								onStartEditing={() => setEditingId(todo.id)}
+								onCancelEditing={() => setEditingId(null)}
 							/>
 						))}
 					</div>
@@ -121,137 +275,6 @@ function InboxPage() {
 	);
 }
 
-function TodoItem({
-	todo,
-	onToggle,
-	onUpdate,
-}: {
-	todo: Todo;
-	onToggle: () => void;
-	onUpdate: (id: string, updates: Partial<Todo>) => void;
-}) {
-	const [isEditing, setIsEditing] = useState(false);
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-		id: todo.id,
-	});
-
-	const style = {
-		transform: CSS.Transform.toString(transform),
-		transition,
-		zIndex: isDragging ? 1 : 0,
-		position: "relative" as const,
-	};
-
-	if (isEditing) {
-		return (
-			<EditableInput
-				initialValue={todo.title}
-				isOpen={isEditing}
-				onSave={(newValue) => {
-					onUpdate(todo.id, { title: newValue });
-					setIsEditing(false);
-				}}
-				onCancel={() => setIsEditing(false)}
-			/>
-		);
-	}
-
-	return (
-		<div className="relative">
-			<div
-				ref={setNodeRef}
-				style={style}
-				className={cn(
-					"group flex w-full items-center gap-3 py-1 bg-card transition-colors pb-2",
-					todo.completed && "opacity-60",
-					isDragging && "shadow-lg bg-background",
-				)}
-			>
-				<div
-					{...attributes}
-					{...listeners}
-					className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing px-2"
-				>
-					<GripVertical className="h-4 w-4 text-muted-foreground" />
-				</div>
-				<div className="flex items-center gap-2">
-					<button
-						onClick={(e) => {
-							e.stopPropagation();
-							onToggle();
-						}}
-						className="flex h-5 w-5 items-center justify-center rounded-full border"
-					>
-						{todo.completed ? (
-							<CheckCircle
-								className={cn(
-									"h-4 w-4",
-									todo.priority === "p1" && "text-red-500",
-									todo.priority === "p2" && "text-orange-500",
-									todo.priority === "p3" && "text-amber-400",
-									todo.priority === "p4" && "text-blue-600",
-									todo.priority === "none" && "text-success",
-								)}
-							/>
-						) : (
-							<Circle
-								className={cn(
-									"h-4 w-4",
-									todo.priority === "p1" && "text-red-500",
-									todo.priority === "p2" && "text-orange-500",
-									todo.priority === "p3" && "text-amber-400",
-									todo.priority === "p4" && "text-blue-600",
-									todo.priority === "none" && "text-muted-foreground",
-								)}
-							/>
-						)}
-					</button>
-				</div>
-				<div className="flex flex-1 flex-col gap-1">
-					<span className={cn("text-sm", todo.completed && "line-through")}>{todo.title}</span>
-					<span className="text-xs text-muted-foreground flex items-center gap-1">
-						<Calendar className="h-4 w-4" />
-						{todo.date}
-					</span>
-				</div>
-				<div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-					<Hint label="Edit">
-						<Button
-							variant="ghost"
-							size="icon"
-							className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
-							onClick={() => setIsEditing(true)}
-						>
-							<Pen className="h-4 w-4" />
-						</Button>
-					</Hint>
-					<DueDate />
-					<Hint label="Comment">
-						<Button
-							variant="ghost"
-							size="icon"
-							className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
-						>
-							<MessageSquare className="h-4 w-4" />
-						</Button>
-					</Hint>
-					<Hint label="More actions">
-						<Button
-							variant="ghost"
-							size="icon"
-							className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
-						>
-							<MoreVertical className="h-4 w-4" />
-						</Button>
-					</Hint>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function arrayMove<T>(array: T[], from: number, to: number) {
-	const newArray = array.slice();
-	newArray.splice(to, 0, newArray.splice(from, 1)[0]);
-	return newArray;
-}
+export const Route = createLazyFileRoute("/inbox")({
+	component: InboxPage,
+});
