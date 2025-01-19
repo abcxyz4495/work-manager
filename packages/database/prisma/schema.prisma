@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  password       String
+  profilePicture String?
+  twoFactorAuth  Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  todos          Todo[]         @relation("UserTodos")
+  comments       Comment[]
+  teams          TeamMember[]
+  settings       UserSettings?
+  calendars      Calendar[]
+  actions        Action[]
+  timers         Timer[]
+  notebooks      Notebook[]
+  FocusSession   FocusSession[]
+}
+
+model UserSettings {
+  id                String  @id @default(uuid())
+  showDueDate       Boolean @default(true)
+  showAssignee      Boolean @default(true)
+  showPriority      Boolean @default(true)
+  showReminders     Boolean @default(true)
+  showLabels        Boolean @default(true)
+  showLocations     Boolean @default(true)
+  showNotifications Boolean @default(true)
+  showSidebar       Boolean @default(true)
+  showTaskCount     Boolean @default(true)
+  showCompleted     Boolean @default(true)
+  dailyTaskGoal     Int     @default(5)
+  weeklyTaskGoal    Int     @default(35)
+  focusTimeGoal     Int     @default(3600) // Daily focus goal in seconds (e.g., 1 hour)
+  vacationMode      Boolean @default(false)
+  user              User    @relation(fields: [userId], references: [id])
+  userId            String  @unique
+}
+
+model Todo {
+  id              String         @id @default(uuid())
+  title           String
+  description     String?
+  completed       Boolean        @default(false)
+  hidden          Boolean        @default(false)
+  dueDate         DateTime?
+  priority        PriorityLevel? @relation(fields: [priorityLevelId], references: [id])
+  reminders       Reminder[]
+  tags            Tag[]          @relation("TodoTags")
+  subTasks        SubTask[]
+  section         Section?       @relation(fields: [sectionId], references: [id])
+  sectionId       String?
+  project         Project?       @relation(fields: [projectId], references: [id])
+  projectId       String?
+  comments        Comment[]
+  assignee        User?          @relation("UserTodos", fields: [assigneeId], references: [id])
+  assigneeId      String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  priorityLevelId String?
+}
+
+model SubTask {
+  id        String  @id @default(uuid())
+  title     String
+  completed Boolean @default(false)
+  hidden    Boolean @default(false)
+  todo      Todo    @relation(fields: [todoId], references: [id])
+  todoId    String
+}
+
+model Reminder {
+  id       String   @id @default(uuid())
+  remindAt DateTime
+  todo     Todo     @relation(fields: [todoId], references: [id])
+  todoId   String
+}
+
+model PriorityLevel {
+  id    String @id @default(uuid())
+  name  String @unique
+  todos Todo[]
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  name  String
+  todos Todo[] @relation("TodoTags")
+}
+
+model Section {
+  id        String   @id @default(uuid())
+  name      String
+  todos     Todo[]
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId String?
+}
+
+model Project {
+  id            String       @id @default(uuid())
+  name          String
+  todos         Todo[]
+  sections      Section[]
+  collaborators TeamMember[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  text      String
+  files     File[]
+  todo      Todo?    @relation(fields: [todoId], references: [id])
+  todoId    String?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model File {
+  id        String  @id @default(uuid())
+  url       String
+  comment   Comment @relation(fields: [commentId], references: [id])
+  commentId String
+}
+
+model TeamMember {
+  id        String  @id @default(uuid())
+  role      String
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId String
+}
+
+model Calendar {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  dailyTasks  Int      @default(0)
+  weeklyTasks Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Action {
+  id      String  @id @default(uuid())
+  name    String
+  enabled Boolean @default(true)
+  user    User    @relation(fields: [userId], references: [id])
+  userId  String
+}
+
+model Timer {
+  id           String    @id @default(uuid())
+  user         User      @relation(fields: [userId], references: [id])
+  userId       String
+  type         TimerType // Type of timer (e.g., Pomodoro, Stopwatch)
+  startTime    DateTime? // When the timer started
+  endTime      DateTime? // When the timer stopped
+  duration     Int       @default(0) // Total duration in seconds
+  sessionCount Int       @default(0) // Number of completed sessions (e.g., Pomodoro sessions)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+enum TimerType {
+  POMODORO
+  STOPWATCH
+  COUNTDOWN
+}
+
+model FocusSession {
+  id            String   @id @default(uuid())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+  date          DateTime // The date of the session
+  totalDuration Int      @default(0) // Total focus time in seconds for the day
+  goalReached   Boolean  @default(false) // Whether the daily focus goal was achieved
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Notebook {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  pages       Page[]
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Page {
+  id         String     @id @default(uuid())
+  title      String
+  content    String? // For rich text or Markdown content
+  files      PageFile[] // Related files associated with the page
+  notebook   Notebook   @relation(fields: [notebookId], references: [id])
+  notebookId String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model PageFile {
+  id        String   @id @default(uuid())
+  url       String // URL of the file (e.g., Cloudinary or S3)
+  type      FileType // Type of file (e.g., IMAGE, VIDEO, PDF, etc.)
+  page      Page     @relation(fields: [pageId], references: [id])
+  pageId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum FileType {
+  IMAGE
+  VIDEO
+  AUDIO
+  PDF
+  DOCUMENT
+  OTHER
+}

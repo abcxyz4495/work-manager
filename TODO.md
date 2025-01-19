@@ -1,0 +1,6 @@
+[✔️] - initialize monorepo
+[✔️] - initialize web-frontend with react
+[✔️] - initialize http-backend with nestjs
+[] - migrate web-frontend ui to @repo/ui
+[] - versioning in api
+[] - websockets for realtime updates
