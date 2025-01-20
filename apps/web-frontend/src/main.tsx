@@ -6,7 +6,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import "./index.css"; // Make sure this file exists for global styles
 import { routeTree } from "./routeTree.gen"; // Your routes configuration
 
-import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
+import { registerServiceWorker } from "./serviceWorkerRegistration";
 
 // Create a new router instance
 const router = createRouter({ routeTree });
@@ -19,7 +19,7 @@ declare module "@tanstack/react-router" {
 }
 
 // Service worker registration
-serviceWorkerRegistration.register();
+registerServiceWorker();
 
 // Render the root element
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

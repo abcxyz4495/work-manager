@@ -1,58 +1,54 @@
-const CACHE_NAME = "my-app-cache-v1";
-const OFFLINE_PAGE = "/offline.html";
+const CACHE_NAME = 'offline-cache';
+const OFFLINE_PAGE = '/offline.html';
 
-// Files to cache during the installation phase
-const urlsToCache = [
-  "/",
+// Files to cache, including the offline page
+const assetsToCache = [
+  '/index.html',
+  '/assets/index-DgM1NOYE.js',
+  '/assets/index-Cg63pDJ6.css',
   OFFLINE_PAGE,
-  "/index.html", // Ensure to cache the main HTML file
-  "/assets/index-CpbETj9y.css", // Replace with your CSS and JS assets
-  "/assets/index-ClOxDWDy.js",
-  // Add any other important static files (like images, fonts, etc.)
 ];
 
-self.addEventListener("install", (event) => {
+// Install event to cache the necessary files
+self.addEventListener('install', (event) => {
+  console.log('Service Worker installed');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log("Service worker: opened cache and caching files");
-      return cache.addAll(urlsToCache);
+      return cache.addAll(assetsToCache);
     })
   );
 });
 
-// Fetch event - serve from cache if available, otherwise fetch from the network
-self.addEventListener("fetch", (event) => {
+// Fetch event to serve the cached assets, fallback to offline page
+self.addEventListener('fetch', (event) => {
+  console.log('Service Worker fetch event:', event);
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      // Return cached response if found
       if (cachedResponse) {
-        return cachedResponse;
+        return cachedResponse; // Serve cached assets
       }
 
-      // Fetch from network if not found in the cache
+      // If no cached response, try fetching from the network
       return fetch(event.request).catch(() => {
-        // Serve the offline page if offline (when navigating)
-        if (event.request.mode === "navigate") {
-          return caches.match(OFFLINE_PAGE);
-        }
+        // If fetch fails (offline), serve the offline page
+        return caches.match(OFFLINE_PAGE);
       });
     })
   );
 });
 
-// Activate event - clean up old caches that are no longer needed
-self.addEventListener("activate", (event) => {
+// Activate event (clean up old caches if necessary)
+self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
-      Promise.all(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
         cacheNames.map((cacheName) => {
           if (!cacheWhitelist.includes(cacheName)) {
-            console.log(`Service worker: deleting outdated cache ${cacheName}`);
-            return caches.delete(cacheName);
+            return caches.delete(cacheName); // Delete old caches
           }
         })
-      )
-    )
+      );
+    })
   );
 });
