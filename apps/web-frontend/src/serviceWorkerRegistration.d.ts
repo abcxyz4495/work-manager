@@ -1,4 +1,4 @@
-declare module "./serviceWorkerRegistration" {
+declare module "serviceWorkerRegistration" {
   interface Config {
     onUpdate?: (registration: ServiceWorkerRegistration) => void;
     onSuccess?: (registration: ServiceWorkerRegistration) => void;

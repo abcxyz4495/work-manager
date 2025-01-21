@@ -12,11 +12,7 @@ export const Hint = ({ label, children, side = "top", align = "center" }: HintPr
 		<TooltipProvider>
 			<Tooltip delayDuration={200}>
 				<TooltipTrigger asChild>{children}</TooltipTrigger>
-				<TooltipContent
-					side={side}
-					align={align}
-					className="border border-white/5 bg-black text-white dark:border-black/5 dark:bg-white dark:text-black"
-				>
+				<TooltipContent side={side} align={align} className="bg-popover text-popover-foreground">
 					<p className="text-xs font-medium">{label}</p>
 				</TooltipContent>
 			</Tooltip>

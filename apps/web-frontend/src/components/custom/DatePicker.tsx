@@ -17,12 +17,23 @@ import { CalendarIcon } from "lucide-react";
 interface DatePickerProps {
 	startYear?: number;
 	endYear?: number;
+	selected?: Date;
+	onSelect?: (date: Date) => void;
 }
+
 export function DatePicker({
 	startYear = getYear(new Date()) - 100,
 	endYear = getYear(new Date()) + 100,
+	selected,
+	onSelect,
 }: DatePickerProps) {
-	const [date, setDate] = React.useState<Date>(new Date());
+	const [date, setDate] = React.useState<Date>(selected || new Date());
+
+	React.useEffect(() => {
+		if (selected) {
+			setDate(selected);
+		}
+	}, [selected]);
 
 	const months = [
 		"January",
@@ -43,16 +54,19 @@ export function DatePicker({
 	const handleMonthChange = (month: string) => {
 		const newDate = setMonth(date, months.indexOf(month));
 		setDate(newDate);
+		onSelect?.(newDate);
 	};
 
 	const handleYearChange = (year: string) => {
-		const newDate = setYear(date, parseInt(year));
+		const newDate = setYear(date, Number.parseInt(year));
 		setDate(newDate);
+		onSelect?.(newDate);
 	};
 
-	const handleSelect = (selectedData: Date | undefined) => {
-		if (selectedData) {
-			setDate(selectedData);
+	const handleSelect = (selectedDate: Date | undefined) => {
+		if (selectedDate) {
+			setDate(selectedDate);
+			onSelect?.(selectedDate);
 		}
 	};
 
@@ -61,7 +75,7 @@ export function DatePicker({
 			<PopoverTrigger asChild>
 				<Button
 					variant={"ghost"}
-					className={cn("justify-start text-left font-normal", !date && "text-muted-foreground")}
+					className={cn("justify-center text-left font-normal", !date && "text-muted-foreground")}
 				>
 					<CalendarIcon className="h-4 w-4" />
 				</Button>

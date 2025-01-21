@@ -82,8 +82,8 @@ function checkValidServiceWorker(swUrl: string, config?: Config) {
         registerValidSW(swUrl, config);
       }
     })
-    .catch((_) => {
-      console.error("No internet connection found. App is running in offline mode.");
+    .catch((error) => {
+      console.error("No internet connection found. App is running in offline mode.", error.message);
     });
 }
 
