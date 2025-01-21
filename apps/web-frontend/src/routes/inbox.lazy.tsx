@@ -1,17 +1,9 @@
 import { EditableInput } from "@/components/custom/EditableInput";
 import { TodoItem } from "@/components/custom/TodoItem";
+import { SortableList } from "@/components/custom/SortableList";
 import { Button } from "@/components/ui/button";
 import { useTodos } from "@/hooks/useTodos";
 import type { Todo } from "@/types/types";
-import {
-	DndContext,
-	PointerSensor,
-	closestCenter,
-	useSensor,
-	useSensors,
-	type DragEndEvent,
-} from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -61,19 +53,9 @@ const initialTodos = [
 ];
 
 function InboxPage() {
-	const { todos, toggleTodo, updateTodo, moveTodo, addTodo } = useTodos(initialTodos);
-	const sensors = useSensors(useSensor(PointerSensor));
+	const { todos, toggleTodo, updateTodo, setTodos, addTodo } = useTodos(initialTodos);
 	const [isAddingTodo, setIsAddingTodo] = useState(false);
 	const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
-
-	const handleDragEnd = (event: DragEndEvent) => {
-		const { active, over } = event;
-		if (!over || active.id === over.id) return;
-
-		const oldIndex = todos.findIndex((todo) => todo.id === active.id);
-		const newIndex = todos.findIndex((todo) => todo.id === over.id);
-		moveTodo(oldIndex, newIndex);
-	};
 
 	const handleStartEditing = (id: string) => {
 		setEditingTodoId(id);
@@ -123,23 +105,21 @@ function InboxPage() {
 				/>
 			)}
 
-			<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-				<SortableContext items={todos.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-					<div className="flex flex-col gap-2">
-						{todos.map((todo) => (
-							<TodoItem
-								key={todo.id}
-								todo={todo}
-								isEditing={editingTodoId === todo.id}
-								onToggle={toggleTodo}
-								onUpdate={updateTodo}
-								onStartEditing={handleStartEditing}
-								onCancelEditing={handleCancelEditing}
-							/>
-						))}
-					</div>
-				</SortableContext>
-			</DndContext>
+			<SortableList
+				items={todos}
+				onChange={setTodos}
+				renderItem={(todo: Todo) => (
+					<TodoItem
+						key={todo.id}
+						todo={todo}
+						isEditing={editingTodoId === todo.id}
+						onToggle={toggleTodo}
+						onUpdate={updateTodo}
+						onStartEditing={handleStartEditing}
+						onCancelEditing={handleCancelEditing}
+					/>
+				)}
+			/>
 		</div>
 	);
 }

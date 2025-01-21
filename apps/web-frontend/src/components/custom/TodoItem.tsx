@@ -1,9 +1,3 @@
-import { DatePicker } from "@/components/custom/DatePicker";
-import { EditableInput } from "@/components/custom/EditableInput";
-import { Hint } from "@/components/custom/Hint";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { type Todo, PRIORITY_COLORS } from "@/types/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -15,6 +9,12 @@ import {
 	MoreVertical,
 	Pen,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Hint } from "@/components/custom/Hint";
+import { EditableInput } from "@/components/custom/EditableInput";
+import { DatePicker } from "@/components/custom/DatePicker";
+import { cn } from "@/lib/utils";
+import { type Todo, PRIORITY_COLORS } from "@/types/types";
 
 interface TodoItemProps {
 	todo: Todo;
@@ -33,20 +33,12 @@ export function TodoItem({
 	onStartEditing,
 	onCancelEditing,
 }: TodoItemProps) {
-	const {
-		attributes,
-		listeners,
-		setNodeRef,
-		setActivatorNodeRef,
-		transform,
-		transition,
-		isDragging,
-	} = useSortable({
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: todo.id,
 	});
 
 	const style = {
-		transform: CSS.Translate.toString(transform),
+		transform: CSS.Transform.toString(transform),
 		transition,
 		opacity: isDragging ? 0.4 : undefined,
 	};
@@ -78,22 +70,21 @@ export function TodoItem({
 	}
 
 	return (
-		<div ref={setNodeRef} style={style}>
+		<li ref={setNodeRef} style={style} className="list-none">
 			<div className="bg-background rounded-lg shadow-sm">
 				<div
 					className={cn(
-						"group flex w-full items-start gap-3 py-1 bg-card transition-colors pb-2",
+						"group flex w-full items-start gap-3 py-4 px-4 bg-card transition-colors min-h-[92px]",
 						todo.completed && "opacity-60",
-						isDragging && "shadow-lg bg-background min-h-16",
-						"flex-none",
+						isDragging && "shadow-lg bg-background",
 					)}
 				>
 					<div
 						{...attributes}
 						{...listeners}
-						className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing px-2"
+						className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
 					>
-						<GripVertical className="h-4 w-4 text-muted-foreground" />
+						<GripVertical className="h-5 w-5 text-muted-foreground" />
 					</div>
 
 					<div className="flex items-center gap-2">
@@ -110,28 +101,24 @@ export function TodoItem({
 					</div>
 
 					<div className="flex flex-1 flex-col gap-1">
-						<div className="flex flex-col">
-							<span className={cn("text-sm", todo.completed && "line-through")}>{todo.title}</span>
-							<div className="flex flex-col gap-1 text-xs text-muted-foreground">
-								{todo.description && (
-									<div>
-										<span className="text-muted-foreground">{todo.description}</span>
-									</div>
-								)}
-								<div className="flex items-center gap-1">
-									<Calendar className="h-4 w-4" />
-									<span>{todo.date}</span>
-								</div>
-							</div>
+						<span className={cn("text-sm font-medium", todo.completed && "line-through")}>
+							{todo.title}
+						</span>
+						<div className="flex items-center gap-1 text-xs text-muted-foreground">
+							<Calendar className="h-3 w-3" />
+							<span>{todo.date}</span>
 						</div>
+						{todo.description && (
+							<span className="text-xs text-muted-foreground">{todo.description}</span>
+						)}
 					</div>
 
-					<div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+					<div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
 						<Hint label="Edit">
 							<Button
 								variant="ghost"
 								size="icon"
-								className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
+								className="h-8 w-8 hover:bg-accent rounded-full"
 								onClick={() => onStartEditing(todo.id)}
 							>
 								<Pen className="h-4 w-4" />
@@ -141,26 +128,18 @@ export function TodoItem({
 							onSelect={(date) => onUpdate(todo.id, { date: date.toLocaleDateString() })}
 						/>
 						<Hint label="Comment">
-							<Button
-								variant="ghost"
-								size="icon"
-								className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
-							>
+							<Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-accent rounded-full">
 								<MessageSquare className="h-4 w-4" />
 							</Button>
 						</Hint>
 						<Hint label="More actions">
-							<Button
-								variant="ghost"
-								size="icon"
-								className="hover:bg-accent rounded-md text-muted-foreground hover:text-foreground"
-							>
+							<Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-accent rounded-full">
 								<MoreVertical className="h-4 w-4" />
 							</Button>
 						</Hint>
 					</div>
 				</div>
 			</div>
-		</div>
+		</li>
 	);
 }
